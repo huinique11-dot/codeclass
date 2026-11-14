@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>코드교실 · 수업</title>
+  <link rel="icon" href="/favicon.svg">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side">
+    <div class="brand">
+      <span class="brand-mark" data-icon="code"></span>
+      <span><span class="class-name">코드교실</span><small class="class-english">CODECLASS</small></span>
+    </div>
+
+    <div class="me-card">
+      <div class="row">
+        <span class="label">참여코드</span>
+        <span class="room-code" id="roomCode">------</span>
+        <button class="icon-btn" type="button" id="copyRoom" title="참여코드 복사" aria-label="참여코드 복사" data-icon="copy"></button>
+      </div>
+      <div class="who" id="who"></div>
+      <button class="reveal" type="button" id="reveal">내 개인코드 확인</button>
+      <div class="my-code" id="myCode" hidden></div>
+      <div class="progress" style="margin-top:12px"><span id="sideBar" style="width:0"></span></div>
+    </div>
+
+    <ol class="step-list" id="stepList"></ol>
+
+    <div class="side-foot">
+      <button class="btn" type="button" id="leave" data-icon="out">입장 화면으로</button>
+      <span class="motto">LITTLE STEPS, BIG CODE.</span>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="btn small menu-btn" type="button" id="menuBtn" aria-label="단계 목록 열기" data-icon="menu"></button>
+      <span class="title" id="roomTitle">수업 불러오는 중…</span>
+      <span class="sep hide-sm"></span>
+      <span class="hide-sm">학생 공간</span>
+      <span class="spacer"></span>
+      <span class="meta"><span class="sync-dot" id="syncDot"></span><span class="hide-sm" id="syncText">5초마다 동기화</span></span>
+      <span class="meta" data-icon="users"><span id="count">0</span>명</span>
+    </header>
+
+    <div style="position:relative; flex:1; display:flex; flex-direction:column">
+      <div class="chips">
+        <button class="chip" type="button" id="teacherChip" hidden></button>
+        <button class="chip" type="button" id="helpChip" data-icon="help">선생님께 도움 요청</button>
+      </div>
+
+      <section class="stage" id="stage" aria-live="polite">
+        <div class="stage-head">
+          <div>
+            <span class="eyebrow" id="part"></span>
+            <h1 id="title"></h1>
+          </div>
+          <div class="timer">
+            <span class="eyebrow" style="color:var(--muted)">CLASS GUIDE</span>
+            <div class="time" id="time"></div>
+            <small class="total-time"></small>
+          </div>
+        </div>
+        <p class="intro" id="intro"></p>
+        <div class="tip-box" id="tip" hidden><span data-icon="code"></span><span id="tipText"></span></div>
+        <ul class="tasks" id="tasks"></ul>
+        <a class="btn soft" id="link" target="_blank" rel="noopener" hidden></a>
+      </section>
+
+      <footer class="bottombar">
+        <span class="count"><span id="pos">1</span><small>/ <span id="total">1</span></small></span>
+        <label class="did" id="didLabel"><input type="checkbox" id="did"> 이 단계를 해봤어요</label>
+        <span class="spacer"></span>
+        <button class="btn" type="button" id="prev" aria-label="이전 단계" data-icon="back"></button>
+        <button class="btn primary" type="button" id="next" data-icon="arrow" data-icon-pos="end">다음 단계</button>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script src="/steps.js"></script>
+<script src="/common.js"></script>
+<script>
+  const STEPS = window.STEPS || [];
+  const info = window.CLASS_INFO || {};
+  document.querySelectorAll('.class-name').forEach((el) => { el.textContent = info.name || '코드교실'; });
+  document.querySelectorAll('.class-english').forEach((el) => { el.textContent = info.english || 'CODECLASS'; });
+  document.querySelectorAll('.total-time').forEach((el) => { el.textContent = info.totalTime || ''; });
+
+  const personalCode = store.get('codeclass.personalCode');
+  if (!personalCode) location.replace('/');
+
+  const $ = (id) => document.getElementById(id);
+  const auth = { authorization: 'Bearer ' + personalCode };
+  let me = null;
+  let room = null;
+  let view = 0;
+  let loaded = false;
+
+  function clamp(i) { return Math.max(0, Math.min(STEPS.length - 1, i)); }
+
+  function goEntry(message) {
+    if (message) session.set('codeclass.notice', message);
+    location.replace('/');
+  }
+
+  async function load() {
+    try {
+      const data = await api('/api/state', { headers: auth });
+      me = data.me;
+      room = data.room;
+      $('syncDot').classList.remove('off');
+      $('syncText').textContent = '5초마다 동기화';
+      if (!loaded) {
+        loaded = true;
+        view = clamp(me.step);
+        const welcome = session.get('codeclass.welcome');
+        if (welcome) { toast(welcome); session.remove('codeclass.welcome'); }
+      }
+      render();
+    } catch (err) {
+      if (err.status === 401) {
+        store.remove('codeclass.personalCode');
+        return goEntry(err.message);
+      }
+      $('syncDot').classList.add('off');
+      $('syncText').textContent = '연결 다시 시도 중';
+    }
+  }
+
+  function render() {
+    if (!me || !room || !STEPS.length) return;
+    const step = STEPS[view];
+    const done = new Set(me.completed);
+
+    $('roomCode').textContent = room.code;
+    $('roomTitle').textContent = room.title;
+    $('count').textContent = room.count;
+    $('who').textContent = me.name + (me.number ? ' · ' + me.number : '');
+    $('myCode').textContent = personalCode;
+    const pct = Math.round((done.size / STEPS.length) * 100);
+    $('sideBar').style.width = pct + '%';
+
+    $('stepList').innerHTML = STEPS.map((s, i) => {
+      const cls = [done.has(i) ? 'done' : '', i === view ? 'current' : '', i === room.currentStep ? 'teacher-here' : ''].join(' ');
+      const mark = done.has(i) && i !== view ? icon('check') : String(i + 1);
+      const label = s.title.replace(/\n/g, ' ');
+      return '<li class="' + cls + '"><button type="button" data-i="' + i + '"><span class="num">' + mark + '</span><span>'
+        + escapeHtml(label) + '</span></button></li>';
+    }).join('');
+
+    if (renderedView !== view) renderStep(step);
+
+    $('pos').textContent = view + 1;
+    $('total').textContent = STEPS.length;
+    $('did').checked = done.has(view);
+    $('didLabel').classList.toggle('checked', done.has(view));
+    $('prev').disabled = view === 0;
+    $('next').disabled = view === STEPS.length - 1;
+
+    const chip = $('teacherChip');
+    chip.hidden = room.currentStep === view || room.currentStep >= STEPS.length;
+    chip.innerHTML = '선생님은 ' + (room.currentStep + 1) + '단계 진행 중' + icon('arrow');
+    $('helpChip').classList.toggle('on', me.help);
+    $('helpChip').lastChild.textContent = me.help ? '도움 요청 보냄 · 취소' : '선생님께 도움 요청';
+  }
+
+  // 단계 내용은 단계가 바뀔 때만 다시 그립니다(5초 동기화 때 체크가 끊기지 않도록).
+  let renderedView = -1;
+  function renderStep(step) {
+    renderedView = view;
+    $('part').textContent = step.part || '';
+    $('title').textContent = step.title || '';
+    $('time').textContent = step.time || '';
+    $('intro').textContent = step.intro || '';
+    $('tip').hidden = !step.tip;
+    $('tipText').textContent = step.tip || '';
+
+    const tasks = step.tasks || [];
+    $('tasks').innerHTML = tasks.map((t, i) => {
+      const key = 'codeclass.task.' + personalCode + '.' + view + '.' + i;
+      const checked = store.get(key) === '1' ? ' checked' : '';
+      return '<li><label><span class="n">' + String(i + 1).padStart(2, '0') + '</span><input type="checkbox" data-key="' + key + '"' + checked + '>'
+        + '<span class="box">' + icon('check') + '</span><span class="t">' + escapeHtml(t) + '</span></label></li>';
+    }).join('');
+
+    const link = $('link');
+    link.hidden = !step.link;
+    if (step.link) {
+      link.href = step.link.url;
+      link.innerHTML = escapeHtml(step.link.label) + icon('external');
+    }
+  }
+
+  async function save(data) {
+    try {
+      const res = await api('/api/progress', { method: 'POST', data, headers: auth });
+      me = res.me;
+      render();
+    } catch (err) {
+      toast(err.message, 'warn');
+    }
+  }
+
+  function go(i) {
+    view = clamp(i);
+    render();
+    window.scrollTo({ top: 0 });
+    $('side').classList.remove('open');
+    save({ step: view });
+  }
+
+  $('stepList').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-i]');
+    if (btn) go(Number(btn.dataset.i));
+  });
+  $('prev').addEventListener('click', () => go(view - 1));
+  $('next').addEventListener('click', () => go(view + 1));
+  $('teacherChip').addEventListener('click', () => go(room.currentStep));
+  $('did').addEventListener('change', (e) => {
+    save({ step: view, done: e.target.checked });
+    if (e.target.checked) toast('좋아요! ' + (view + 1) + '단계 완료.');
+  });
+  $('helpChip').addEventListener('click', () => {
+    save({ help: !me.help });
+    if (!me.help) toast('선생님께 도움 요청을 보냈어요.');
+  });
+  $('tasks').addEventListener('change', (e) => {
+    if (e.target.dataset.key) store.set(e.target.dataset.key, e.target.checked ? '1' : '0');
+  });
+  $('reveal').addEventListener('click', () => {
+    const box = $('myCode');
+    box.hidden = !box.hidden;
+    $('reveal').textContent = box.hidden ? '내 개인코드 확인' : '개인코드 숨기기';
+  });
+  $('copyRoom').addEventListener('click', () => room && copyText(room.code));
+  $('menuBtn').addEventListener('click', () => $('side').classList.toggle('open'));
+  $('leave').addEventListener('click', () => {
+    if (confirm('입장 화면으로 나갈까요?\n개인코드가 있으면 언제든 다시 들어올 수 있어요.')) location.href = '/';
+  });
+
+  load();
+  setInterval(() => { if (!document.hidden) load(); }, 5000);
+</script>
+</body>
+</html>

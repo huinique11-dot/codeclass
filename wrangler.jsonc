@@ -1,0 +1,21 @@
+{
+  // 코드교실: Cloudflare Workers + D1
+  "name": "codeclass",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-09-01",
+
+  // public 폴더의 화면(HTML·CSS·JS)을 그대로 내보냅니다.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+
+  // 입장 기록을 저장하는 D1 데이터베이스.
+  // database_id를 비워 두면 처음 발행할 때 Cloudflare가 자동으로 만들어 연결합니다.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "codeclass-db"
+    }
+  ]
+}

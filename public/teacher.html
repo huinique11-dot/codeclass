@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>코드교실 · 선생님 공간</title>
+  <link rel="icon" href="/favicon.svg">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="teacher-wrap">
+  <div class="teacher-top">
+    <div class="brand">
+      <span class="brand-mark" data-icon="code"></span>
+      <span><span class="class-name">코드교실</span><small>TEACHER SPACE</small></span>
+    </div>
+    <div class="controls">
+      <a class="btn small ghost" href="/" data-icon="back">학생 입장 화면</a>
+      <button class="btn small" type="button" id="logout" hidden data-icon="out">잠그기</button>
+    </div>
+  </div>
+
+  <!-- 1. 비밀번호 -->
+  <section class="panel login" id="loginView">
+    <span class="eyebrow">TEACHER ONLY</span>
+    <h2>선생님 공간</h2>
+    <p class="lead">Cloudflare에 설정한 선생님 비밀번호를 입력하세요.</p>
+    <form id="loginForm">
+      <label class="field">비밀번호
+        <input class="input" type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <p class="form-error" hidden></p>
+      <button class="btn primary" type="submit" data-icon="arrow" data-icon-pos="end">들어가기</button>
+    </form>
+  </section>
+
+  <!-- 2. 수업 목록 -->
+  <section id="roomsView" hidden>
+    <div class="panel">
+      <span class="eyebrow">MY CLASSES</span>
+      <h2>내 수업</h2>
+      <p class="lead">수업을 만들면 6자리 참여코드가 생겨요. 학생에게 이 코드를 알려 주세요.</p>
+      <form class="create-room" id="createForm">
+        <input class="input" name="title" maxlength="40" placeholder="예: 3학년 2반 코딩 수업" required>
+        <button class="btn primary" type="submit" style="padding:12px 18px">수업 만들기</button>
+      </form>
+      <div class="rooms" id="rooms"></div>
+    </div>
+  </section>
+
+  <!-- 3. 수업 하나 -->
+  <section id="roomView" hidden>
+    <div class="panel">
+      <button class="btn small ghost" type="button" id="backToRooms" data-icon="back" style="margin-bottom:16px">수업 목록</button>
+      <div class="room-head">
+        <div>
+          <span class="eyebrow">참여코드</span>
+          <div class="big" id="rCode"></div>
+          <h2 id="rTitle"></h2>
+          <div class="controls" style="margin-top:10px">
+            <button class="btn small" type="button" id="copyLink" data-icon="copy">입장 링크 복사</button>
+            <button class="btn small" type="button" id="toggleOpen"></button>
+          </div>
+        </div>
+        <div>
+          <span class="eyebrow" style="margin-bottom:8px">지금 안내 중인 단계</span>
+          <div class="stepper">
+            <button class="btn small" type="button" id="stepPrev" aria-label="이전 단계" data-icon="back"></button>
+            <strong id="stepName"></strong>
+            <button class="btn small" type="button" id="stepNext" aria-label="다음 단계" data-icon="arrow"></button>
+          </div>
+          <p style="margin:8px 0 0;font-size:12.5px;color:var(--muted)">학생 화면에 '선생님은 N단계 진행 중'으로 보여요.</p>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="v" id="sCount">0</div><div class="k">입장한 학생</div></div>
+        <div class="stat"><div class="v" id="sActive">0</div><div class="k">최근 1분 안에 접속</div></div>
+        <div class="stat"><div class="v" id="sAvg">0%</div><div class="k">평균 진도</div></div>
+        <div class="stat alert"><div class="v" id="sHelp">0</div><div class="k">도움 요청</div></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>이름</th><th>번호</th><th>진도</th><th>보고 있는 단계</th><th>상태</th><th>마지막 접속</th><th></th></tr></thead>
+          <tbody id="students"></tbody>
+        </table>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted);margin:10px 2px 0">5초마다 자동으로 새로고침돼요.</p>
+    </div>
+  </section>
+</div>
+
+<script src="/steps.js"></script>
+<script src="/common.js"></script>
+<script>
+  const STEPS = window.STEPS || [];
+  const info = window.CLASS_INFO || {};
+  document.querySelectorAll('.class-name').forEach((el) => { el.textContent = info.name || '코드교실'; });
+
+  const $ = (id) => document.getElementById(id);
+  let password = session.get('codeclass.teacher') || '';
+  let currentCode = null;
+  let current = null;
+  let timer = null;
+
+  const tApi = (path, opts = {}) => api(path, { ...opts, headers: { 'x-teacher-password': password } });
+
+  function show(view) {
+    ['loginView', 'roomsView', 'roomView'].forEach((v) => { $(v).hidden = v !== view; });
+    $('logout').hidden = view === 'loginView';
+  }
+
+  function stepLabel(i) {
+    const s = STEPS[i];
+    return s ? (i + 1) + '. ' + s.title.replace(/\n/g, ' ') : (i + 1) + '단계';
+  }
+
+  async function loadRooms() {
+    try {
+      const { rooms } = await tApi('/api/teacher/rooms');
+      show('roomsView');
+      $('rooms').innerHTML = rooms.length ? rooms.map((r) =>
+        '<button class="room-card" type="button" data-code="' + r.code + '">'
+        + '<span class="code">' + r.code + '</span><span class="t">' + escapeHtml(r.title) + '</span>'
+        + '<span class="m">학생 ' + r.count + '명 · ' + (r.open ? '입장 가능' : '입장 닫힘') + '</span></button>'
+      ).join('') : '<div class="empty">아직 만든 수업이 없어요. 위에서 첫 수업을 만들어 보세요.</div>';
+      return true;
+    } catch (err) {
+      if (err.status === 401 || err.status === 503) {
+        session.remove('codeclass.teacher');
+        password = '';
+        show('loginView');
+        const box = $('loginForm').querySelector('.form-error');
+        box.textContent = err.message;
+        box.hidden = false;
+      } else {
+        toast(err.message, 'warn');
+      }
+      return false;
+    }
+  }
+
+  async function openRoom(code) {
+    currentCode = code;
+    show('roomView');
+    await loadRoom();
+    clearInterval(timer);
+    timer = setInterval(() => { if (!document.hidden && currentCode) loadRoom(); }, 5000);
+  }
+
+  async function loadRoom(update) {
+    try {
+      const data = update
+        ? await tApi('/api/teacher/room', { method: 'POST', data: { code: currentCode, ...update } })
+        : await tApi('/api/teacher/room?code=' + currentCode);
+      current = data;
+      renderRoom();
+    } catch (err) {
+      toast(err.message, 'warn');
+    }
+  }
+
+  function renderRoom() {
+    const { room, students } = current;
+    $('rCode').textContent = room.code;
+    $('rTitle').textContent = room.title;
+    $('toggleOpen').textContent = room.open ? '입장 닫기' : '입장 다시 열기';
+    $('stepName').textContent = stepLabel(room.currentStep);
+    $('stepPrev').disabled = room.currentStep <= 0;
+    $('stepNext').disabled = room.currentStep >= STEPS.length - 1;
+
+    const total = STEPS.length || 1;
+    const now = Date.now();
+    $('sCount').textContent = students.length;
+    $('sActive').textContent = students.filter((s) => now - s.seen < 60000).length;
+    $('sHelp').textContent = students.filter((s) => s.help).length;
+    const avg = students.length
+      ? Math.round(students.reduce((sum, s) => sum + s.completed.length, 0) / students.length / total * 100) : 0;
+    $('sAvg').textContent = avg + '%';
+
+    $('students').innerHTML = students.length ? students.map((s) => {
+      const pct = Math.round(s.completed.length / total * 100);
+      const online = now - s.seen < 60000;
+      const status = s.help
+        ? '<span class="badge help">도움 요청</span> <button class="btn small" data-act="clear-help" data-id="' + s.id + '">해결</button>'
+        : (online ? '<span class="badge" style="background:var(--good-soft);color:var(--good)">접속 중</span>' : '<span class="badge idle">쉬는 중</span>');
+      return '<tr class="' + (s.help ? 'needs-help' : '') + '">'
+        + '<td><strong>' + escapeHtml(s.name) + '</strong></td>'
+        + '<td>' + escapeHtml(s.number || '-') + '</td>'
+        + '<td><span class="progress"><span style="width:' + pct + '%"></span></span>' + s.completed.length + '/' + total + '</td>'
+        + '<td>' + escapeHtml(stepLabel(s.step)) + '</td>'
+        + '<td>' + status + '</td>'
+        + '<td>' + timeAgo(s.seen) + '</td>'
+        + '<td><button class="btn small" data-act="reissue" data-id="' + s.id + '">개인코드 재발급</button> '
+        + '<button class="btn small ghost" data-act="remove" data-id="' + s.id + '">삭제</button></td>'
+        + '</tr>';
+    }).join('') : '<tr><td colspan="7" class="empty">아직 입장한 학생이 없어요. 참여코드 <strong>' + room.code + '</strong>를 알려 주세요.</td></tr>';
+  }
+
+  $('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    password = e.target.password.value;
+    $('loginForm').querySelector('.form-error').hidden = true;
+    if (await loadRooms()) {
+      session.set('codeclass.teacher', password);
+      e.target.reset();
+    }
+  });
+
+  $('createForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const { room } = await tApi('/api/teacher/rooms', { method: 'POST', data: { title: e.target.title.value } });
+      e.target.reset();
+      toast('수업을 만들었어요. 참여코드 ' + room.code);
+      openRoom(room.code);
+    } catch (err) {
+      toast(err.message, 'warn');
+    }
+  });
+
+  $('rooms').addEventListener('click', (e) => {
+    const card = e.target.closest('[data-code]');
+    if (card) openRoom(card.dataset.code);
+  });
+
+  $('backToRooms').addEventListener('click', () => {
+    clearInterval(timer);
+    currentCode = null;
+    loadRooms();
+  });
+
+  $('stepPrev').addEventListener('click', () => loadRoom({ currentStep: current.room.currentStep - 1 }));
+  $('stepNext').addEventListener('click', () => loadRoom({ currentStep: current.room.currentStep + 1 }));
+  $('toggleOpen').addEventListener('click', () => loadRoom({ open: !current.room.open }));
+  $('copyLink').addEventListener('click', () => copyText(location.origin + '/?room=' + current.room.code));
+
+  $('students').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const { act, id } = btn.dataset;
+    const student = current.students.find((s) => s.id === id);
+    if (act === 'remove' && !confirm(student.name + ' 학생의 기록을 지울까요? 되돌릴 수 없어요.')) return;
+    if (act === 'reissue' && !confirm(student.name + ' 학생에게 새 개인코드를 줄까요? 예전 코드는 더 이상 쓸 수 없어요.')) return;
+    try {
+      const res = await tApi('/api/teacher/student', { method: 'POST', data: { id, action: act } });
+      if (act === 'reissue') alert(res.name + ' 학생의 새 개인코드\n\n' + res.personalCode + '\n\n학생에게 알려 주세요.');
+      loadRoom();
+    } catch (err) {
+      toast(err.message, 'warn');
+    }
+  });
+
+  $('logout').addEventListener('click', () => {
+    session.remove('codeclass.teacher');
+    password = '';
+    clearInterval(timer);
+    show('loginView');
+  });
+
+  if (password) loadRooms(); else show('loginView');
+</script>
+</body>
+</html>
