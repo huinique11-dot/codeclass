@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>코드교실 · 수업</title>
+  <title>수업을 여는 공방 · 참여자 공간</title>
   <link rel="icon" href="/favicon.svg">
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -12,7 +12,7 @@
   <aside class="side" id="side">
     <div class="brand">
       <span class="brand-mark" data-icon="code"></span>
-      <span><span class="class-name">코드교실</span><small class="class-english">CODECLASS</small></span>
+      <span><span class="class-name"></span><small class="class-english"></small></span>
     </div>
 
     <div class="me-card">
@@ -23,33 +23,43 @@
       </div>
       <div class="who" id="who"></div>
       <button class="reveal" type="button" id="reveal">내 개인코드 확인</button>
-      <div class="my-code" id="myCode" hidden></div>
       <div class="progress" style="margin-top:12px"><span id="sideBar" style="width:0"></span></div>
     </div>
 
-    <ol class="step-list" id="stepList"></ol>
+    <nav class="nav" id="nav">
+      <button type="button" data-view="slides" class="active" data-icon="book">연수 슬라이드</button>
+      <button type="button" data-view="questions" data-icon="chat">실시간 질문<span class="nav-dot" id="qDot" hidden></span></button>
+      <button type="button" data-view="gallery" data-icon="grid">수업 사이트 모아보기</button>
+    </nav>
+
+    <div class="step-groups" id="stepList"></div>
 
     <div class="side-foot">
       <button class="btn" type="button" id="leave" data-icon="out">입장 화면으로</button>
-      <span class="motto">LITTLE STEPS, BIG CODE.</span>
+      <span class="motto class-motto"></span>
     </div>
   </aside>
+  <div class="side-shade" id="shade"></div>
 
   <div class="main">
     <header class="topbar">
-      <button class="btn small menu-btn" type="button" id="menuBtn" aria-label="단계 목록 열기" data-icon="menu"></button>
-      <span class="title" id="roomTitle">수업 불러오는 중…</span>
+      <button class="btn small menu-btn" type="button" id="menuBtn" aria-label="메뉴 열기" data-icon="menu"></button>
+      <span class="title" id="roomTitle">연수방 연결 중…</span>
       <span class="sep hide-sm"></span>
-      <span class="hide-sm">학생 공간</span>
+      <span class="hide-sm">참여자 공간</span>
       <span class="spacer"></span>
       <span class="meta"><span class="sync-dot" id="syncDot"></span><span class="hide-sm" id="syncText">5초마다 동기화</span></span>
       <span class="meta" data-icon="users"><span id="count">0</span>명</span>
+      <button class="btn small soft" type="button" id="openFiles" data-icon="download">자료실</button>
+      <button class="icon-btn hide-sm" type="button" id="fullscreen" title="전체 화면" aria-label="전체 화면" data-icon="expand"></button>
     </header>
 
-    <div style="position:relative; flex:1; display:flex; flex-direction:column">
+    <!-- 연수 슬라이드 -->
+    <div class="view" id="view-slides">
       <div class="chips">
         <button class="chip" type="button" id="teacherChip" hidden></button>
-        <button class="chip" type="button" id="helpChip" data-icon="help">선생님께 도움 요청</button>
+        <button class="chip" type="button" id="questionChip" hidden data-icon="chat">강사 질문이 열렸어요</button>
+        <button class="chip help" type="button" id="helpChip" data-icon="help">강사에게 도움 요청</button>
       </div>
 
       <section class="stage" id="stage" aria-live="polite">
@@ -59,65 +69,166 @@
             <h1 id="title"></h1>
           </div>
           <div class="timer">
-            <span class="eyebrow" style="color:var(--muted)">CLASS GUIDE</span>
+            <span class="eyebrow" style="color:var(--muted)">WORKSHOP GUIDE</span>
             <div class="time" id="time"></div>
             <small class="total-time"></small>
           </div>
         </div>
-        <p class="intro" id="intro"></p>
-        <div class="tip-box" id="tip" hidden><span data-icon="code"></span><span id="tipText"></span></div>
+        <p class="intro" id="desc"></p>
+        <div id="flow"></div>
+
+        <h2 class="block-title" id="tasksTitle">이번 단계에서 할 일 <small>하나씩 끝낼 때마다 눌러서 지워 가세요</small></h2>
         <ul class="tasks" id="tasks"></ul>
-        <a class="btn soft" id="link" target="_blank" rel="noopener" hidden></a>
+
+        <div class="prompt-box" id="promptBox" hidden>
+          <div class="prompt-head">
+            <span class="eyebrow">AI에게 보낼 요청문</span>
+            <button class="btn small soft" type="button" id="copyPrompt" data-icon="copy">요청문 복사</button>
+          </div>
+          <pre id="promptText"></pre>
+          <p class="prompt-target" id="promptTarget"></p>
+        </div>
+
+        <div class="links" id="links"></div>
+        <div class="memo-box" id="memoBox" hidden></div>
+        <div class="help-box" id="helpBox"></div>
       </section>
 
       <footer class="bottombar">
-        <span class="count"><span id="pos">1</span><small>/ <span id="total">1</span></small></span>
-        <label class="did" id="didLabel"><input type="checkbox" id="did"> 이 단계를 해봤어요</label>
-        <span class="spacer"></span>
-        <button class="btn" type="button" id="prev" aria-label="이전 단계" data-icon="back"></button>
-        <button class="btn primary" type="button" id="next" data-icon="arrow" data-icon-pos="end">다음 단계</button>
+        <span class="count"><span id="pos">01</span><small>/ <span id="total">23</span></small></span>
+        <button class="did-btn" type="button" id="did">
+          <span class="did-box">✓</span>
+          <span class="did-text"><strong id="didLabel">이 단계를 해봤어요</strong><small id="checkText"></small></span>
+        </button>
+        <button class="btn nav-btn" type="button" id="prev" aria-label="이전 단계" data-icon="back"></button>
+        <button class="btn primary nav-btn" type="button" id="next" data-icon="arrow" data-icon-pos="end">다음<span class="next-word">&nbsp;단계</span></button>
       </footer>
+    </div>
+
+    <!-- 실시간 질문 -->
+    <div class="view" id="view-questions" hidden>
+      <section class="page">
+        <span class="eyebrow">THINK TOGETHER</span>
+        <h1 class="page-title">함께 묻고, 함께 발견해요.</h1>
+        <div class="q-list" id="qList"></div>
+      </section>
+    </div>
+
+    <!-- 수업 사이트 모아보기 -->
+    <div class="view" id="view-gallery" hidden>
+      <section class="page">
+        <div class="page-head">
+          <div>
+            <span class="eyebrow">MADE BY TEACHERS</span>
+            <h1 class="page-title">우리의 수업 사이트 모음.</h1>
+          </div>
+          <button class="btn primary" type="button" id="openSubmit" data-icon="send">내 결과물 제출</button>
+        </div>
+        <p class="lead">같은 연수방에서 만든 수업 사이트예요. 발행 주소를 열어 보고 활용 아이디어를 나눠 보세요.</p>
+        <div class="gallery" id="gallery"></div>
+      </section>
     </div>
   </div>
 </div>
 
-<script src="/steps.js"></script>
+<!-- 자료실 -->
+<div class="modal-back" id="filesModal" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="filesTitle">
+    <div class="modal-top">
+      <div><span class="eyebrow">자료실</span><h3 id="filesTitle">필요한 자료를 바로 받으세요.</h3></div>
+      <button class="icon-btn" type="button" data-close aria-label="자료실 닫기" data-icon="x"></button>
+    </div>
+    <div class="resources" id="resources"></div>
+  </div>
+</div>
+
+<!-- 내 개인코드 -->
+<div class="modal-back" id="codeModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true">
+    <span class="eyebrow">MY PERSONAL CODE</span>
+    <h3>나의 개인 재입장 코드</h3>
+    <p>다음에는 입장 화면의 <strong>다시 입장</strong>에서 이 코드만 넣으세요.</p>
+    <div class="big-code" id="myCode"></div>
+    <div class="actions two">
+      <button class="btn soft" type="button" id="copyMyCode" data-icon="copy">코드 복사</button>
+      <button class="btn soft" type="button" id="saveMyCode" data-icon="download">파일로 저장</button>
+    </div>
+    <button class="btn" type="button" data-close style="margin-top:14px;width:100%">닫기</button>
+  </div>
+</div>
+
+<!-- 결과물 제출 -->
+<div class="modal-back" id="submitModal" hidden>
+  <div class="modal wide left" role="dialog" aria-modal="true" aria-labelledby="submitTitle">
+    <div class="modal-top">
+      <div><span class="eyebrow">결과물 제출</span><h3 id="submitTitle">내 수업 사이트 제출하기</h3></div>
+      <button class="icon-btn" type="button" data-close aria-label="닫기" data-icon="x"></button>
+    </div>
+    <p>사이트 제목과 발행 주소를 적어 주세요. 나머지는 선택이에요. 같은 연수방에서 함께 볼 수 있어요.</p>
+    <form id="submitForm" class="stack">
+      <label class="field">사이트 제목<input class="input" name="title" maxlength="60" required></label>
+      <label class="field">발행 주소 (https://)<input class="input" name="url" placeholder="https://내사이트.내계정.workers.dev" required></label>
+      <label class="field">GitHub 저장소 <small>(선택)</small><input class="input" name="repoUrl" placeholder="https://github.com/내계정/저장소"></label>
+      <label class="field">수정한 점 · 다음 수업 활용 계획 <small>(선택)</small><textarea class="input" name="note" rows="3" maxlength="500"></textarea></label>
+      <p class="form-error" hidden></p>
+      <button class="btn primary" type="submit" data-icon="send" data-icon-pos="end">발행 주소 제출</button>
+    </form>
+  </div>
+</div>
+
+<!-- 질문 크게 보기 -->
+<div class="modal-back" id="bigModal" hidden>
+  <div class="modal huge left" role="dialog" aria-modal="true">
+    <div class="modal-top">
+      <div><span class="eyebrow" id="bigType"></span><h3 id="bigTitle"></h3></div>
+      <button class="icon-btn" type="button" data-close aria-label="닫기" data-icon="x"></button>
+    </div>
+    <div id="bigBody"></div>
+  </div>
+</div>
+
+<script src="/course.js"></script>
 <script src="/common.js"></script>
 <script src="/preview.js"></script>
 <script>
-  const STEPS = window.STEPS || [];
-  const info = window.CLASS_INFO || {};
-  document.querySelectorAll('.class-name').forEach((el) => { el.textContent = info.name || '코드교실'; });
-  document.querySelectorAll('.class-english').forEach((el) => { el.textContent = info.english || 'CODECLASS'; });
-  document.querySelectorAll('.total-time').forEach((el) => { el.textContent = info.totalTime || ''; });
+  applyClassInfo();
+  const STEPS = flatSteps();
+  const MEMO_FIELDS = window.MEMO_FIELDS || {};
+  const $ = (id) => document.getElementById(id);
 
   const personalCode = store.get('codeclass.personalCode');
   if (!personalCode) location.replace('/');
-
-  const $ = (id) => document.getElementById(id);
   const auth = { authorization: 'Bearer ' + personalCode };
-  let me = null;
-  let room = null;
-  let view = 0;
+
+  let data = null;          // 서버에서 받은 전체 상태
+  let view = 0;             // 보고 있는 단계
+  let tab = 'slides';
+  let renderedStep = -1;
   let loaded = false;
+  let bigQuestion = null;
+  const drafts = {};        // 질문 응답 입력 중인 값
 
-  function clamp(i) { return Math.max(0, Math.min(STEPS.length - 1, i)); }
+  const pad = (n) => String(n).padStart(2, '0');
+  const doneSet = () => new Set(data ? data.me.completed : []);
 
-  function goEntry(message) {
-    if (message) session.set('codeclass.notice', message);
-    location.replace('/');
+  // 앞 단계를 모두 끝내야 다음 단계를 열 수 있어요.
+  function unlockedUntil() {
+    const done = doneSet();
+    let i = 0;
+    while (i < STEPS.length - 1 && done.has(i)) i++;
+    return i;
   }
+  const clamp = (i) => Math.max(0, Math.min(STEPS.length - 1, i));
 
+  // ---------- 불러오기 ----------
   async function load() {
     try {
-      const data = await api('/api/state', { headers: auth });
-      me = data.me;
-      room = data.room;
+      data = await api('/api/state', { headers: auth });
       $('syncDot').classList.remove('off');
       $('syncText').textContent = '5초마다 동기화';
       if (!loaded) {
         loaded = true;
-        view = clamp(me.step);
+        view = Math.min(clamp(data.me.step), unlockedUntil());
         const welcome = session.get('codeclass.welcome');
         if (welcome) { toast(welcome); session.remove('codeclass.welcome'); }
       }
@@ -125,120 +236,367 @@
     } catch (err) {
       if (err.status === 401) {
         store.remove('codeclass.personalCode');
-        return goEntry(err.message);
+        session.set('codeclass.notice', err.message);
+        return location.replace('/');
       }
       $('syncDot').classList.add('off');
-      $('syncText').textContent = '연결 다시 시도 중';
+      $('syncText').textContent = '연결 재시도 중';
     }
   }
 
-  function render() {
-    if (!me || !room || !STEPS.length) return;
-    const step = STEPS[view];
-    const done = new Set(me.completed);
+  async function save(payload) {
+    try {
+      const res = await api('/api/progress', { method: 'POST', data: payload, headers: auth });
+      data.me = res.me;
+      render();
+      return true;
+    } catch (err) {
+      toast(err.message, 'warn');
+      return false;
+    }
+  }
 
+  // ---------- 그리기 ----------
+  function render() {
+    if (!data) return;
+    const { me, room } = data;
     $('roomCode').textContent = room.code;
     $('roomTitle').textContent = room.title;
     $('count').textContent = room.count;
-    $('who').textContent = me.name + (me.number ? ' · ' + me.number : '');
-    $('myCode').textContent = personalCode;
-    const pct = Math.round((done.size / STEPS.length) * 100);
-    $('sideBar').style.width = pct + '%';
+    $('who').textContent = me.name + (me.subject ? ' · ' + me.subject : '');
+    $('sideBar').style.width = Math.round((me.completed.length / STEPS.length) * 100) + '%';
+    $('qDot').hidden = !room.activeQuestion;
+    renderSide();
+    if (tab === 'slides') renderSlides();
+    if (tab === 'questions') renderQuestions();
+    if (tab === 'gallery') renderGallery();
+    if (bigQuestion) renderBig();
+  }
 
-    $('stepList').innerHTML = STEPS.map((s, i) => {
-      const cls = [done.has(i) ? 'done' : '', i === view ? 'current' : '', i === room.currentStep ? 'teacher-here' : ''].join(' ');
-      const mark = done.has(i) && i !== view ? icon('check') : String(i + 1);
-      const label = s.title.replace(/\n/g, ' ');
-      return '<li class="' + cls + '"><button type="button" data-i="' + i + '"><span class="num">' + mark + '</span><span>'
-        + escapeHtml(label) + '</span></button></li>';
-    }).join('');
+  function renderSide() {
+    const done = doneSet();
+    const open = unlockedUntil();
+    let html = '';
+    (window.COURSE || []).forEach((mod, m) => {
+      html += '<div class="step-group"><div class="group-title">' + (m + 1) + '차시 · ' + escapeHtml(mod.tool) + '</div><ol class="step-list">';
+      STEPS.forEach((s, i) => {
+        if (s.m !== m) return;
+        const locked = i > open;
+        const cls = [done.has(i) ? 'done' : '', i === view && tab === 'slides' ? 'current' : '', locked ? 'locked' : '',
+          i === data.room.currentStep ? 'teacher-here' : ''].join(' ');
+        const mark = locked ? icon('lock') : (done.has(i) ? icon('check') : String(i + 1));
+        html += '<li class="' + cls + '"><button type="button" data-i="' + i + '" title="' + escapeHtml(s.desc || '') + '">'
+          + '<span class="num">' + mark + '</span><span>' + s.code + ' ' + escapeHtml(s.short) + '</span></button></li>';
+      });
+      html += '</ol></div>';
+    });
+    $('stepList').innerHTML = html;
+  }
 
-    if (renderedView !== view) renderStep(step);
+  function renderSlides() {
+    const step = STEPS[view];
+    const done = doneSet();
+    const { room } = data;
 
-    $('pos').textContent = view + 1;
+    // 단계 내용은 단계가 바뀔 때만 다시 그려요 (입력 중인 내용이 지워지지 않게).
+    if (renderedStep !== view) {
+      renderedStep = view;
+      $('part').textContent = (step.m + 1) + '차시 · ' + step.module.tool + ' · ' + (step.s + 1) + '단계';
+      $('title').textContent = step.title;
+      $('time').textContent = step.time || '';
+      $('desc').textContent = step.desc || '';
+      $('flow').innerHTML = step.intro ? flowHtml() : '';
+
+      const actions = step.actions || [];
+      $('tasksTitle').hidden = !actions.length;
+      $('tasks').innerHTML = actions.map((a, i) => {
+        const key = 'codeclass.task.' + personalCode + '.' + view + '.' + i;
+        const checked = store.get(key) === '1' ? ' checked' : '';
+        return '<li><label><input type="checkbox" data-key="' + key + '"' + checked + '>'
+          + '<span class="box">' + icon('check') + '</span><span class="n">' + pad(i + 1) + '</span>'
+          + '<span class="t"><strong>' + escapeHtml(a[0]) + '</strong>' + (a[1] ? '<small>' + escapeHtml(a[1]) + '</small>' : '') + '</span></label></li>';
+      }).join('');
+
+      $('promptBox').hidden = !step.prompt;
+      $('promptText').textContent = step.prompt || '';
+      $('promptTarget').innerHTML = step.target ? icon('arrow') + escapeHtml(step.target) : '';
+
+      $('links').innerHTML = (step.links || []).map((l) =>
+        '<a class="btn soft" href="' + escapeHtml(l[1]) + '" target="_blank" rel="noopener">' + escapeHtml(l[0]) + icon('external') + '</a>'
+      ).join('') + (step.finish ? '<button class="btn primary" type="button" data-go="gallery">수업 사이트 모아보기로 가기' + icon('arrow') + '</button>' : '');
+
+      renderMemo(step);
+
+      $('helpBox').innerHTML = (step.help || []).length
+        ? '<h2 class="block-title">막혔을 때</h2>' + step.help.map((h) =>
+          '<details><summary>' + escapeHtml(h[0]) + '</summary><p>' + escapeHtml(h[1]) + '</p></details>').join('')
+        : '';
+      window.scrollTo({ top: 0 });
+    }
+
+    const isDone = done.has(view);
+    $('pos').textContent = pad(view + 1);
     $('total').textContent = STEPS.length;
-    $('did').checked = done.has(view);
-    $('didLabel').classList.toggle('checked', done.has(view));
+    $('did').classList.toggle('checked', isDone);
+    $('didLabel').textContent = isDone ? '해봤어요! 잘했어요' : '이 단계를 해봤어요';
+    $('checkText').textContent = step.check || '';
     $('prev').disabled = view === 0;
     $('next').disabled = view === STEPS.length - 1;
+    $('next').classList.toggle('waiting', !isDone);
 
     const chip = $('teacherChip');
     chip.hidden = room.currentStep === view || room.currentStep >= STEPS.length;
-    chip.innerHTML = '선생님은 ' + (room.currentStep + 1) + '단계 진행 중' + icon('arrow');
-    $('helpChip').classList.toggle('on', me.help);
-    $('helpChip').lastChild.textContent = me.help ? '도움 요청 보냄 · 취소' : '선생님께 도움 요청';
+    chip.innerHTML = '강사는 ' + (room.currentStep + 1) + '단계 진행 중' + icon('arrow');
+    $('questionChip').hidden = !room.activeQuestion;
+    $('helpChip').classList.toggle('on', data.me.help);
+    $('helpChip').lastChild.textContent = data.me.help ? '도움 요청 중 · 취소' : '강사에게 도움 요청';
   }
 
-  // 단계 내용은 단계가 바뀔 때만 다시 그립니다(5초 동기화 때 체크가 끊기지 않도록).
-  let renderedView = -1;
-  function renderStep(step) {
-    renderedView = view;
-    $('part').textContent = step.part || '';
-    $('title').textContent = step.title || '';
-    $('time').textContent = step.time || '';
-    $('intro').textContent = step.intro || '';
-    $('tip').hidden = !step.tip;
-    $('tipText').textContent = step.tip || '';
-
-    const tasks = step.tasks || [];
-    $('tasks').innerHTML = tasks.map((t, i) => {
-      const key = 'codeclass.task.' + personalCode + '.' + view + '.' + i;
-      const checked = store.get(key) === '1' ? ' checked' : '';
-      return '<li><label><span class="n">' + String(i + 1).padStart(2, '0') + '</span><input type="checkbox" data-key="' + key + '"' + checked + '>'
-        + '<span class="box">' + icon('check') + '</span><span class="t">' + escapeHtml(t) + '</span></label></li>';
-    }).join('');
-
-    const link = $('link');
-    link.hidden = !step.link;
-    if (step.link) {
-      link.href = step.link.url;
-      link.innerHTML = escapeHtml(step.link.label) + icon('external');
-    }
+  function flowHtml() {
+    return '<div class="flow">' + (window.COURSE || []).map((mod, m) =>
+      '<div class="flow-card"><span class="eyebrow">' + (m + 1) + '차시</span><strong>' + escapeHtml(mod.tool) + '</strong>'
+      + '<span>' + escapeHtml(mod.label) + '</span><small>' + escapeHtml(mod.outcome) + '</small></div>'
+    ).join('<span class="flow-arrow">' + icon('arrow') + '</span>') + '</div>';
   }
 
-  async function save(data) {
-    try {
-      const res = await api('/api/progress', { method: 'POST', data, headers: auth });
-      me = res.me;
-      render();
-    } catch (err) {
-      toast(err.message, 'warn');
-    }
+  function renderMemo(step) {
+    const keys = step.memo || [];
+    const box = $('memoBox');
+    box.hidden = !keys.length;
+    box.innerHTML = keys.length ? '<h2 class="block-title">내 주소 보관함 <small>개인코드로 다시 들어와도 그대로 있어요</small></h2>'
+      + keys.map((k) => {
+        const f = MEMO_FIELDS[k] || { label: k, placeholder: '' };
+        const v = data.me.memo[k] || '';
+        const open = /^https?:\/\//.test(v) ? '<a class="btn small" href="' + escapeHtml(v) + '" target="_blank" rel="noopener">열기' + icon('external') + '</a>' : '';
+        return '<label class="memo-row"><span>' + escapeHtml(f.label) + '</span><span class="memo-input">'
+          + '<input class="input" data-memo="' + k + '" value="' + escapeHtml(v) + '" placeholder="' + escapeHtml(f.placeholder) + '">'
+          + open + '</span></label>';
+      }).join('') : '';
+  }
+
+  function renderQuestions() {
+    const qs = data.questions;
+    const active = data.room.activeQuestion;
+    const focused = document.activeElement && document.activeElement.closest('#qList');
+    if (focused) return; // 입력 중에는 다시 그리지 않아요.
+    $('qList').innerHTML = qs.length ? qs.map((q, i) => {
+      const typeLabel = (q.type === 'word' ? 'WORD CLOUD' : 'LIVE POLL') + ' · ' + q.responses + '명 응답';
+      const body = q.type === 'word' ? wordCloudHtml(q.results) : pollHtml(q.results, q.responses, q.mine);
+      const draft = drafts[q.id] ?? q.mine ?? '';
+      const form = q.type === 'word'
+        ? '<input class="input" data-q="' + q.id + '" maxlength="20" placeholder="짧은 단어 하나 · 20자 이내" value="' + escapeHtml(draft) + '">'
+        : '<div class="choices">' + q.options.map((o) =>
+          '<label class="choice"><input type="radio" name="q-' + q.id + '" data-q="' + q.id + '" value="' + escapeHtml(o) + '"'
+          + (draft === o ? ' checked' : '') + '><span>' + escapeHtml(o) + '</span></label>').join('') + '</div>';
+      return '<article class="q-card' + (q.id === active ? ' active' : '') + '">'
+        + '<div class="q-top"><span class="q-num">질문 ' + (i + 1) + (q.id === active ? ' · ● 지금 안내 중' : '') + '</span>'
+        + '<button class="btn small ghost" type="button" data-big="' + q.id + '" data-icon="expand">크게 보기</button></div>'
+        + '<span class="eyebrow">' + typeLabel + '</span><h3>' + escapeHtml(q.title) + '</h3>' + body
+        + '<div class="q-answer"><span class="q-label">내 응답' + (q.mine ? ' <em>· 저장됨</em>' : '') + '</span>' + form
+        + '<button class="btn primary small" type="button" data-send="' + q.id + '">' + (q.mine ? '응답 수정' : '응답 보내기') + '</button></div>'
+        + '</article>';
+    }).join('') : '<div class="empty">아직 열린 질문이 없어요. 강사가 질문을 열면 여기에 나타나요.</div>';
+    hydrateIcons($('qList'));
+  }
+
+  function renderGallery() {
+    const g = data.gallery;
+    $('openSubmit').lastChild.textContent = data.mySubmission ? '제출 내용 수정' : '내 결과물 제출';
+    $('gallery').innerHTML = g.length ? g.map((s, i) =>
+      '<article class="g-card' + (s.studentId === data.me.id ? ' mine' : '') + '"><div class="g-top"><span class="g-num">' + pad(i + 1) + '</span>'
+      + (s.subject ? '<span class="badge idle">' + escapeHtml(s.subject) + '</span>' : '') + '</div>'
+      + '<span class="g-who">' + escapeHtml(s.name) + ' 선생님</span><h3>' + escapeHtml(s.title) + '</h3>'
+      + (s.note ? '<p>' + escapeHtml(s.note) + '</p>' : '')
+      + '<div class="g-links"><a class="btn small primary" href="' + escapeHtml(s.url) + '" target="_blank" rel="noopener">발행 사이트 열기' + icon('external') + '</a>'
+      + (s.repoUrl ? '<a class="btn small" href="' + escapeHtml(s.repoUrl) + '" target="_blank" rel="noopener">GitHub 저장소</a>' : '') + '</div></article>'
+    ).join('') : '<div class="empty">첫 수업 사이트를 기다리고 있어요.<br><small>제출한 발행 주소는 같은 연수방에서 함께 봐요.</small></div>';
+  }
+
+  function renderBig() {
+    const q = data.questions.find((x) => x.id === bigQuestion);
+    if (!q) { $('bigModal').hidden = true; bigQuestion = null; return; }
+    $('bigType').textContent = (q.type === 'word' ? 'WORD CLOUD' : 'LIVE POLL') + ' · ' + q.responses + '명 응답';
+    $('bigTitle').textContent = q.title;
+    $('bigBody').innerHTML = q.type === 'word' ? wordCloudHtml(q.results) : pollHtml(q.results, q.responses, q.mine);
+  }
+
+  // ---------- 화면 바꾸기 ----------
+  function showTab(name) {
+    tab = name;
+    ['slides', 'questions', 'gallery'].forEach((v) => { $('view-' + v).hidden = v !== name; });
+    document.querySelectorAll('#nav button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
+    closeSide();
+    render();
   }
 
   function go(i) {
-    view = clamp(i);
-    render();
-    window.scrollTo({ top: 0 });
-    $('side').classList.remove('open');
+    i = clamp(i);
+    if (i > unlockedUntil()) return toast('앞 단계의 완료 체크를 먼저 해 주세요.', 'warn');
+    view = i;
+    if (tab !== 'slides') showTab('slides'); else render();
+    closeSide();
     save({ step: view });
   }
 
+  function openModal(id) { $(id).hidden = false; }
+  function closeSide() { $('side').classList.remove('open'); $('shade').classList.remove('show'); }
+
+  // ---------- 이벤트 ----------
   $('stepList').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-i]');
     if (btn) go(Number(btn.dataset.i));
   });
+  $('nav').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-view]');
+    if (btn) showTab(btn.dataset.view);
+  });
   $('prev').addEventListener('click', () => go(view - 1));
-  $('next').addEventListener('click', () => go(view + 1));
-  $('teacherChip').addEventListener('click', () => go(room.currentStep));
-  $('did').addEventListener('change', (e) => {
-    save({ step: view, done: e.target.checked });
-    if (e.target.checked) toast('좋아요! ' + (view + 1) + '단계 완료.');
+  $('next').addEventListener('click', () => {
+    if (!doneSet().has(view)) return toast('이 단계를 해봤으면 "이 단계를 해봤어요"를 먼저 눌러 주세요.', 'warn');
+    go(view + 1);
   });
-  $('helpChip').addEventListener('click', () => {
-    save({ help: !me.help });
-    if (!me.help) toast('선생님께 도움 요청을 보냈어요.');
+  $('did').addEventListener('click', async () => {
+    const next = !doneSet().has(view);
+    if (await save({ step: view, done: next }) && next) toast('좋아요! ' + STEPS[view].code + ' 완료. 다음 단계로 가 볼까요?');
   });
+  $('teacherChip').addEventListener('click', () => go(Math.min(data.room.currentStep, unlockedUntil())));
+  $('questionChip').addEventListener('click', () => showTab('questions'));
+  $('helpChip').addEventListener('click', async () => {
+    const next = !data.me.help;
+    if (await save({ help: next })) toast(next ? '강사 화면에 도움 요청을 표시했어요.' : '도움 요청을 취소했어요.');
+  });
+
+  // 할 일을 누르면 줄이 그어져요 (이 기기에 기억)
   $('tasks').addEventListener('change', (e) => {
     if (e.target.dataset.key) store.set(e.target.dataset.key, e.target.checked ? '1' : '0');
   });
-  $('reveal').addEventListener('click', () => {
-    const box = $('myCode');
-    box.hidden = !box.hidden;
-    $('reveal').textContent = box.hidden ? '내 개인코드 확인' : '개인코드 숨기기';
+  $('copyPrompt').addEventListener('click', () => copyText($('promptText').textContent));
+  $('links').addEventListener('click', (e) => { if (e.target.closest('[data-go]')) showTab('gallery'); });
+
+  // 주소 보관함: 칸에서 나가면 저장
+  $('memoBox').addEventListener('change', async (e) => {
+    const key = e.target.dataset.memo;
+    if (!key) return;
+    if (await save({ memo: { [key]: e.target.value.trim() } })) {
+      toast('보관했어요.');
+      renderMemo(STEPS[view]);
+    }
   });
-  $('copyRoom').addEventListener('click', () => room && copyText(room.code));
-  $('menuBtn').addEventListener('click', () => $('side').classList.toggle('open'));
+
+  // 질문
+  $('qList').addEventListener('input', (e) => { if (e.target.dataset.q) drafts[e.target.dataset.q] = e.target.value; });
+  $('qList').addEventListener('change', (e) => { if (e.target.dataset.q) drafts[e.target.dataset.q] = e.target.value; });
+  $('qList').addEventListener('click', async (e) => {
+    const big = e.target.closest('[data-big]');
+    if (big) { bigQuestion = big.dataset.big; renderBig(); return openModal('bigModal'); }
+    const send = e.target.closest('[data-send]');
+    if (!send) return;
+    const id = send.dataset.send;
+    const value = (drafts[id] ?? '').trim();
+    if (!value) return toast('응답을 먼저 적거나 골라 주세요.', 'warn');
+    send.disabled = true;
+    try {
+      await api('/api/answer', { method: 'POST', data: { questionId: id, value }, headers: auth });
+      delete drafts[id];
+      document.activeElement && document.activeElement.blur();
+      toast('응답을 보냈어요.');
+      await load();
+    } catch (err) {
+      toast(err.message, 'warn');
+    } finally {
+      send.disabled = false;
+    }
+  });
+
+  // 결과물 제출
+  $('openSubmit').addEventListener('click', () => {
+    const done = doneSet();
+    const before = STEPS.length - 1;
+    for (let i = 0; i < before; i++) if (!done.has(i)) return toast('앞 단계의 완료 체크를 마친 뒤 제출할 수 있어요. (' + STEPS[i].code + ' ' + STEPS[i].short + ')', 'warn');
+    const f = $('submitForm');
+    const mine = data.mySubmission;
+    f.title.value = mine ? mine.title : '';
+    f.url.value = mine ? mine.url : (data.me.memo.site || '');
+    f.repoUrl.value = mine ? mine.repoUrl : (data.me.memo.github || '');
+    f.note.value = mine ? mine.note : '';
+    f.querySelector('.form-error').hidden = true;
+    openModal('submitModal');
+  });
+  $('submitForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    const err = f.querySelector('.form-error');
+    try {
+      await api('/api/submit', { method: 'POST', headers: auth, data: {
+        title: f.title.value, url: f.url.value.trim(), repoUrl: f.repoUrl.value.trim(), note: f.note.value,
+      } });
+      $('submitModal').hidden = true;
+      toast('발행 주소를 제출했어요. 모아보기에서 확인하세요.');
+      await load();
+    } catch (ex) {
+      err.textContent = ex.message;
+      err.hidden = false;
+    }
+  });
+
+  // 자료실
+  $('openFiles').addEventListener('click', () => { renderResources(); openModal('filesModal'); });
+  function renderResources() {
+    const prompts = STEPS.filter((s) => s.prompt);
+    const checks = STEPS.map((s) => s.code + ' ' + s.check);
+    const extra = window.RESOURCES || [];
+    $('resources').innerHTML =
+      '<article class="res"><strong>전체 흐름 한눈에 보기</strong><span>4차시 동안 무엇을 만들고 어디로 가는지 정리했어요.</span>'
+      + '<button class="btn small soft" type="button" data-res="flow">흐름 안내 받기</button></article>'
+      + '<article class="res"><strong>AI에게 보낼 요청문 모음</strong><span>단계별 요청문 ' + prompts.length + '개를 한 파일로 받아요.</span>'
+      + '<button class="btn small soft" type="button" data-res="prompts">요청문 모음 받기</button></article>'
+      + '<article class="res"><strong>마지막 확인표</strong><span>단계마다 확인할 것을 체크리스트로 받아요.</span>'
+      + '<button class="btn small soft" type="button" data-res="checks">확인표 받기</button></article>'
+      + extra.map((r) => '<article class="res"><strong>' + escapeHtml(r.title) + '</strong><span>' + escapeHtml(r.desc || '') + '</span>'
+        + '<a class="btn small soft" href="' + escapeHtml(r.url) + '" target="_blank" rel="noopener">' + escapeHtml(r.label || '열기') + icon('external') + '</a></article>').join('');
+    $('resources').onclick = (e) => {
+      const b = e.target.closest('[data-res]');
+      if (!b) return;
+      const name = (window.CLASS_INFO || {}).name || '수업 공방';
+      if (b.dataset.res === 'flow') {
+        downloadText('workshop-flow.txt', name + ' · 전체 흐름\n\n' + (window.COURSE || []).map((m, i) =>
+          (i + 1) + '차시 · ' + m.tool + '\n  목표: ' + m.label + '\n  결과: ' + m.outcome + '\n'
+          + m.steps.map((s, j) => '  ' + (i + 1) + '-' + pad(j + 1) + ' ' + s.short + ' (' + (s.time || '') + ')').join('\n')).join('\n\n'));
+      }
+      if (b.dataset.res === 'prompts') {
+        downloadText('ai-prompts.txt', name + ' · AI 요청문 모음\n\n' + prompts.map((s) =>
+          '■ ' + s.code + ' ' + s.short + '\n' + s.prompt + '\n→ ' + (s.target || '')).join('\n\n'));
+      }
+      if (b.dataset.res === 'checks') {
+        downloadText('final-checklist.txt', name + ' · 마지막 확인표\n\n' + checks.map((c) => '□ ' + c).join('\n'));
+      }
+    };
+  }
+
+  // 내 개인코드
+  $('reveal').addEventListener('click', () => { $('myCode').textContent = personalCode; openModal('codeModal'); });
+  $('copyMyCode').addEventListener('click', () => copyText(personalCode));
+  $('saveMyCode').addEventListener('click', () => {
+    downloadText('my-personal-code.txt', ((window.CLASS_INFO || {}).name || '') + ' · 개인 재입장 정보\n참여코드: ' + data.room.code
+      + '\n별칭: ' + data.me.name + '\n개인코드: ' + personalCode + '\n\n다음 입장: ' + location.origin + ' → 다시 입장 → 개인코드만 입력');
+  });
+
+  // 공통 닫기
+  document.querySelectorAll('.modal-back').forEach((m) => {
+    m.addEventListener('click', (e) => {
+      if (e.target === m || e.target.closest('[data-close]')) { m.hidden = true; if (m.id === 'bigModal') bigQuestion = null; }
+    });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { document.querySelectorAll('.modal-back').forEach((m) => { m.hidden = true; }); bigQuestion = null; }
+  });
+
+  $('copyRoom').addEventListener('click', () => data && copyText(data.room.code, '참여코드를 복사했어요.'));
+  $('menuBtn').addEventListener('click', () => { $('side').classList.add('open'); $('shade').classList.add('show'); });
+  $('shade').addEventListener('click', closeSide);
+  $('fullscreen').addEventListener('click', () => {
+    if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.();
+  });
   $('leave').addEventListener('click', () => {
     if (confirm('입장 화면으로 나갈까요?\n개인코드가 있으면 언제든 다시 들어올 수 있어요.')) location.href = '/';
   });

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>코드교실 · 선생님 공간</title>
+  <title>수업을 여는 공방 · 강사 공간</title>
   <link rel="icon" href="/favicon.svg">
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -12,109 +12,219 @@
   <div class="teacher-top">
     <div class="brand">
       <span class="brand-mark" data-icon="code"></span>
-      <span><span class="class-name">코드교실</span><small>TEACHER SPACE</small></span>
+      <span><span class="class-name"></span><small>INSTRUCTOR SPACE</small></span>
     </div>
     <div class="controls">
-      <a class="btn small ghost" href="/" data-icon="back">학생 입장 화면</a>
+      <a class="btn small ghost" href="/" data-icon="back">참여자 입장 화면</a>
       <button class="btn small" type="button" id="logout" hidden data-icon="out">잠그기</button>
     </div>
   </div>
 
   <!-- 1. 비밀번호 -->
   <section class="panel login" id="loginView">
-    <span class="eyebrow">TEACHER ONLY</span>
-    <h2>선생님 공간</h2>
-    <p class="lead">Cloudflare에 설정한 선생님 비밀번호를 입력하세요.</p>
-    <form id="loginForm">
-      <label class="field">비밀번호
+    <span class="eyebrow">INSTRUCTOR ONLY</span>
+    <h2>오늘의 연수를 준비해요.</h2>
+    <p class="lead">Cloudflare에 설정한 강사 비밀번호(TEACHER_PASSWORD)를 입력하세요.</p>
+    <form id="loginForm" class="stack">
+      <label class="field">강사 비밀번호
         <input class="input" type="password" name="password" autocomplete="current-password" required>
       </label>
       <p class="form-error" hidden></p>
-      <button class="btn primary" type="submit" data-icon="arrow" data-icon-pos="end">들어가기</button>
+      <button class="btn primary" type="submit" data-icon="arrow" data-icon-pos="end">강사 화면 열기</button>
     </form>
   </section>
 
-  <!-- 2. 수업 목록 -->
+  <!-- 2. 연수 목록 -->
   <section id="roomsView" hidden>
     <div class="panel">
-      <span class="eyebrow">MY CLASSES</span>
-      <h2>내 수업</h2>
-      <p class="lead">수업을 만들면 6자리 참여코드가 생겨요. 학생에게 이 코드를 알려 주세요.</p>
+      <span class="eyebrow">MY WORKSHOPS</span>
+      <h2>내 연수 목록</h2>
+      <p class="lead">연수를 개설하면 6자리 참여코드가 자동으로 생겨요. 참여자는 이 코드로 입장해요.</p>
       <form class="create-room" id="createForm">
-        <input class="input" name="title" maxlength="40" placeholder="예: 3학년 2반 코딩 수업" required>
-        <button class="btn primary" type="submit" style="padding:12px 18px">수업 만들기</button>
+        <input class="input" name="title" maxlength="60" placeholder="예: 사이트구축 연수 1기" required>
+        <button class="btn primary" type="submit" style="padding:12px 18px">연수 개설 · 참여코드 생성</button>
       </form>
       <div class="rooms" id="rooms"></div>
     </div>
   </section>
 
-  <!-- 3. 수업 하나 -->
+  <!-- 3. 연수 하나 -->
   <section id="roomView" hidden>
     <div class="panel">
-      <button class="btn small ghost" type="button" id="backToRooms" data-icon="back" style="margin-bottom:16px">수업 목록</button>
+      <button class="btn small ghost" type="button" id="backToRooms" data-icon="back" style="margin-bottom:16px">내 연수 목록</button>
       <div class="room-head">
         <div>
           <span class="eyebrow">참여코드</span>
           <div class="big" id="rCode"></div>
           <h2 id="rTitle"></h2>
           <div class="controls" style="margin-top:10px">
+            <button class="btn small" type="button" id="copyCode" data-icon="copy">참여코드 복사</button>
             <button class="btn small" type="button" id="copyLink" data-icon="copy">입장 링크 복사</button>
+            <button class="btn small" type="button" id="showGuide" data-icon="expand">입장 안내 크게 보기</button>
             <button class="btn small" type="button" id="toggleOpen"></button>
           </div>
         </div>
-        <div>
-          <span class="eyebrow" style="margin-bottom:8px">지금 안내 중인 단계</span>
+        <div class="step-control">
+          <span class="eyebrow" style="margin-bottom:8px">참여자에게 현재 단계 알리기</span>
           <div class="stepper">
             <button class="btn small" type="button" id="stepPrev" aria-label="이전 단계" data-icon="back"></button>
-            <strong id="stepName"></strong>
+            <select class="input" id="stepSelect" aria-label="현재 단계"></select>
             <button class="btn small" type="button" id="stepNext" aria-label="다음 단계" data-icon="arrow"></button>
           </div>
-          <p style="margin:8px 0 0;font-size:12.5px;color:var(--muted)">학생 화면에 '선생님은 N단계 진행 중'으로 보여요.</p>
+          <p class="fine">참여자 화면에 '강사는 N단계 진행 중'으로 보여요.</p>
         </div>
       </div>
 
-      <div class="stats">
-        <div class="stat"><div class="v" id="sCount">0</div><div class="k">입장한 학생</div></div>
-        <div class="stat"><div class="v" id="sActive">0</div><div class="k">최근 1분 안에 접속</div></div>
-        <div class="stat"><div class="v" id="sAvg">0%</div><div class="k">평균 진도</div></div>
-        <div class="stat alert"><div class="v" id="sHelp">0</div><div class="k">도움 요청</div></div>
+      <div class="tabs t-tabs" id="tTabs">
+        <button type="button" class="active" data-tab="people">참여자 현황</button>
+        <button type="button" data-tab="questions">실시간 질문</button>
+        <button type="button" data-tab="gallery">수업 사이트 모아보기</button>
+        <button type="button" data-tab="manage">연수 관리</button>
       </div>
 
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>이름</th><th>번호</th><th>진도</th><th>보고 있는 단계</th><th>상태</th><th>마지막 접속</th><th></th></tr></thead>
-          <tbody id="students"></tbody>
-        </table>
+      <!-- 참여자 현황 -->
+      <div id="tab-people">
+        <div class="stats">
+          <div class="stat"><div class="v" id="sCount">0</div><div class="k">참여한 선생님</div></div>
+          <div class="stat alert"><div class="v" id="sHelp">0</div><div class="k">도움이 필요해요</div></div>
+          <div class="stat"><div class="v" id="sAll">0</div><div class="k">모든 단계 완료</div></div>
+          <div class="stat"><div class="v" id="sSub">0</div><div class="k">결과물 제출</div></div>
+        </div>
+        <div class="row-between">
+          <p class="fine">모두의 속도를 살펴보세요. 5초마다 자동으로 새로고침돼요.</p>
+          <button class="btn small" type="button" id="csv" data-icon="download">참여 현황 내려받기 (CSV)</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>참여자 / 교과</th><th>현재 단계</th><th>완료 진도</th><th>도움 요청</th><th>결과물</th><th>접속</th><th>개인코드</th><th></th></tr></thead>
+            <tbody id="students"></tbody>
+          </table>
+        </div>
       </div>
-      <p style="font-size:12.5px;color:var(--muted);margin:10px 2px 0">5초마다 자동으로 새로고침돼요.</p>
+
+      <!-- 실시간 질문 -->
+      <div id="tab-questions" hidden>
+        <form class="q-create" id="qForm">
+          <span class="eyebrow">선생님들의 생각을 물어보세요</span>
+          <div class="form-row">
+            <label class="field">질문 형식
+              <select class="input" name="type">
+                <option value="word">워드클라우드</option>
+                <option value="choice">선택형 · 막대그래프</option>
+              </select>
+            </label>
+            <label class="field">질문<input class="input" name="title" maxlength="160" required placeholder="예: 오늘, AI와 만들고 싶은 수업자료는?"></label>
+          </div>
+          <label class="field" id="optField" hidden>보기 · 한 줄에 하나, 2–8개
+            <textarea class="input" name="options" rows="4" placeholder="오늘 처음 들어요&#10;이름은 들어 봤어요&#10;만들어 본 적 있어요"></textarea>
+          </label>
+          <button class="btn primary" type="submit" data-icon="send">질문 만들고 안내하기</button>
+        </form>
+        <div class="q-list" id="tqList"></div>
+      </div>
+
+      <!-- 모아보기 -->
+      <div id="tab-gallery" hidden>
+        <div class="gallery" id="tGallery"></div>
+      </div>
+
+      <!-- 연수 관리 -->
+      <div id="tab-manage" hidden>
+        <div class="manage">
+          <form class="stack" id="renameForm">
+            <span class="eyebrow">연수명 수정</span>
+            <p class="fine">참여코드와 참여자 진도·응답·제출물은 그대로 유지돼요.</p>
+            <input class="input" name="title" maxlength="60" required>
+            <button class="btn" type="submit">연수명 저장</button>
+          </form>
+          <form class="stack danger" id="deleteForm">
+            <span class="eyebrow">연수 삭제</span>
+            <p class="fine">이 연수와 참여자 기록·질문·응답·제출물이 모두 지워져요. 복구할 수 없고, 기존 참여코드와 개인코드로 입장할 수 없어요.</p>
+            <input class="input" name="confirm" maxlength="6" placeholder="확인을 위해 참여코드 입력" required>
+            <button class="btn danger-btn" type="submit" data-icon="trash">연수와 기록 모두 삭제</button>
+          </form>
+        </div>
+      </div>
     </div>
   </section>
 </div>
 
-<script src="/steps.js"></script>
+<!-- 입장 안내 크게 보기 -->
+<div class="modal-back" id="guideModal" hidden>
+  <div class="modal huge" role="dialog" aria-modal="true">
+    <div class="modal-top" style="justify-content:flex-end"><button class="icon-btn" type="button" data-close aria-label="닫기" data-icon="x"></button></div>
+    <span class="eyebrow">선생님들께 아래 참여코드를 안내해 주세요</span>
+    <div class="guide-code" id="gCode"></div>
+    <p class="guide-url" id="gUrl"></p>
+    <ol class="guide-steps">
+      <li>위 주소로 사이트를 열어요.</li>
+      <li><strong>처음 입장</strong>에서 참여코드 · 별칭 · 담당 교과를 넣어요.</li>
+      <li>받은 <strong>개인코드</strong>를 꼭 보관해요. 다음에는 개인코드만으로 들어와요.</li>
+    </ol>
+  </div>
+</div>
+
+<!-- 새 개인코드 -->
+<div class="modal-back" id="reissueModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true">
+    <span class="eyebrow">NEW PERSONAL CODE</span>
+    <h3 id="reName"></h3>
+    <p>이 코드는 해당 선생님께만 전해 주세요. 이전 개인코드는 더 이상 쓸 수 없어요.</p>
+    <div class="big-code" id="reCode"></div>
+    <div class="actions two">
+      <button class="btn soft" type="button" id="reCopy" data-icon="copy">코드 복사</button>
+      <button class="btn" type="button" data-close>닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 질문 크게 보기 -->
+<div class="modal-back" id="bigModal" hidden>
+  <div class="modal huge left" role="dialog" aria-modal="true">
+    <div class="modal-top">
+      <div><span class="eyebrow" id="bigType"></span><h3 id="bigTitle"></h3></div>
+      <button class="icon-btn" type="button" data-close aria-label="닫기" data-icon="x"></button>
+    </div>
+    <div id="bigBody"></div>
+  </div>
+</div>
+
+<script src="/course.js"></script>
 <script src="/common.js"></script>
 <script src="/preview.js"></script>
 <script>
-  const STEPS = window.STEPS || [];
-  const info = window.CLASS_INFO || {};
-  document.querySelectorAll('.class-name').forEach((el) => { el.textContent = info.name || '코드교실'; });
-
+  applyClassInfo();
+  const STEPS = flatSteps();
   const $ = (id) => document.getElementById(id);
   let password = session.get('codeclass.teacher') || '';
   let currentCode = null;
   let current = null;
   let timer = null;
+  let tab = 'people';
+  let bigQuestion = null;
+  let editing = null;
 
   const tApi = (path, opts = {}) => api(path, { ...opts, headers: { 'x-teacher-password': password } });
+  const pad = (n) => String(n).padStart(2, '0');
+  const stepLabel = (i) => STEPS[i] ? STEPS[i].code + ' ' + STEPS[i].short : (i + 1) + '단계';
 
   function show(view) {
     ['loginView', 'roomsView', 'roomView'].forEach((v) => { $(v).hidden = v !== view; });
     $('logout').hidden = view === 'loginView';
   }
 
-  function stepLabel(i) {
-    const s = STEPS[i];
-    return s ? (i + 1) + '. ' + s.title.replace(/\n/g, ' ') : (i + 1) + '단계';
+  function failAuth(err) {
+    if (err.status === 401 || err.status === 503) {
+      session.remove('codeclass.teacher');
+      password = '';
+      clearInterval(timer);
+      show('loginView');
+      const box = $('loginForm').querySelector('.form-error');
+      box.textContent = err.message;
+      box.hidden = false;
+      return true;
+    }
+    return false;
   }
 
   async function loadRooms() {
@@ -124,20 +234,12 @@
       $('rooms').innerHTML = rooms.length ? rooms.map((r) =>
         '<button class="room-card" type="button" data-code="' + r.code + '">'
         + '<span class="code">' + r.code + '</span><span class="t">' + escapeHtml(r.title) + '</span>'
-        + '<span class="m">학생 ' + r.count + '명 · ' + (r.open ? '입장 가능' : '입장 닫힘') + '</span></button>'
-      ).join('') : '<div class="empty">아직 만든 수업이 없어요. 위에서 첫 수업을 만들어 보세요.</div>';
+        + '<span class="m">참여자 ' + r.count + '명 · ' + new Date(r.created).toLocaleDateString('ko-KR') + ' 개설'
+        + (r.open ? '' : ' · 입장 닫힘') + '</span></button>'
+      ).join('') : '<div class="empty">아직 개설한 연수가 없어요. 위에서 첫 연수를 개설해 보세요.</div>';
       return true;
     } catch (err) {
-      if (err.status === 401 || err.status === 503) {
-        session.remove('codeclass.teacher');
-        password = '';
-        show('loginView');
-        const box = $('loginForm').querySelector('.form-error');
-        box.textContent = err.message;
-        box.hidden = false;
-      } else {
-        toast(err.message, 'warn');
-      }
+      if (!failAuth(err)) toast(err.message, 'warn');
       return false;
     }
   }
@@ -145,60 +247,113 @@
   async function openRoom(code) {
     currentCode = code;
     show('roomView');
+    $('stepSelect').innerHTML = STEPS.map((s, i) => '<option value="' + i + '">' + escapeHtml(stepLabel(i)) + '</option>').join('');
     await loadRoom();
     clearInterval(timer);
     timer = setInterval(() => { if (!document.hidden && currentCode) loadRoom(); }, 5000);
   }
 
-  async function loadRoom(update) {
+  async function loadRoom(path, payload) {
     try {
-      const data = update
-        ? await tApi('/api/teacher/room', { method: 'POST', data: { code: currentCode, ...update } })
+      current = path
+        ? await tApi(path, { method: 'POST', data: { code: currentCode, ...payload } })
         : await tApi('/api/teacher/room?code=' + currentCode);
-      current = data;
       renderRoom();
+      return true;
     } catch (err) {
-      toast(err.message, 'warn');
+      if (!failAuth(err)) toast(err.message, 'warn');
+      return false;
     }
   }
 
+  // ---------- 그리기 ----------
   function renderRoom() {
-    const { room, students } = current;
+    const { room } = current;
     $('rCode').textContent = room.code;
     $('rTitle').textContent = room.title;
-    $('toggleOpen').textContent = room.open ? '입장 닫기' : '입장 다시 열기';
-    $('stepName').textContent = stepLabel(room.currentStep);
+    $('toggleOpen').textContent = room.open ? '새 입장 닫기' : '새 입장 다시 열기';
+    if (document.activeElement !== $('stepSelect')) $('stepSelect').value = String(room.currentStep);
     $('stepPrev').disabled = room.currentStep <= 0;
     $('stepNext').disabled = room.currentStep >= STEPS.length - 1;
+    if (document.activeElement !== $('renameForm').title) $('renameForm').title.value = room.title;
+    if (tab === 'people') renderPeople();
+    if (tab === 'questions') renderQuestions();
+    if (tab === 'gallery') renderGallery();
+    if (bigQuestion) renderBig();
+  }
 
-    const total = STEPS.length || 1;
+  function renderPeople() {
+    const { students } = current;
+    const total = STEPS.length;
     const now = Date.now();
     $('sCount').textContent = students.length;
-    $('sActive').textContent = students.filter((s) => now - s.seen < 60000).length;
     $('sHelp').textContent = students.filter((s) => s.help).length;
-    const avg = students.length
-      ? Math.round(students.reduce((sum, s) => sum + s.completed.length, 0) / students.length / total * 100) : 0;
-    $('sAvg').textContent = avg + '%';
+    $('sAll').textContent = students.filter((s) => s.completed.length >= total).length;
+    $('sSub').textContent = students.filter((s) => s.submitted).length;
 
     $('students').innerHTML = students.length ? students.map((s) => {
       const pct = Math.round(s.completed.length / total * 100);
       const online = now - s.seen < 60000;
-      const status = s.help
-        ? '<span class="badge help">도움 요청</span> <button class="btn small" data-act="clear-help" data-id="' + s.id + '">해결</button>'
-        : (online ? '<span class="badge" style="background:var(--good-soft);color:var(--good)">접속 중</span>' : '<span class="badge idle">쉬는 중</span>');
       return '<tr class="' + (s.help ? 'needs-help' : '') + '">'
-        + '<td><strong>' + escapeHtml(s.name) + '</strong></td>'
-        + '<td>' + escapeHtml(s.number || '-') + '</td>'
-        + '<td><span class="progress"><span style="width:' + pct + '%"></span></span>' + s.completed.length + '/' + total + '</td>'
+        + '<td><strong>' + escapeHtml(s.name) + '</strong><small class="sub">' + escapeHtml(s.subject || '—') + '</small></td>'
         + '<td>' + escapeHtml(stepLabel(s.step)) + '</td>'
-        + '<td>' + status + '</td>'
-        + '<td>' + timeAgo(s.seen) + '</td>'
-        + '<td><button class="btn small" data-act="reissue" data-id="' + s.id + '">개인코드 재발급</button> '
-        + '<button class="btn small ghost" data-act="remove" data-id="' + s.id + '">삭제</button></td>'
+        + '<td><span class="progress"><span style="width:' + pct + '%"></span></span>' + s.completed.length + '/' + total + '</td>'
+        + '<td>' + (s.help ? '<span class="badge help">도움 필요</span> <button class="btn small" data-act="clear-help" data-id="' + s.id + '">해결</button>' : '<span class="fine">—</span>') + '</td>'
+        + '<td>' + (s.submitted ? '<span class="badge ok">제출 완료</span>' : '<span class="badge idle">미제출</span>') + '</td>'
+        + '<td><span class="dot ' + (online ? 'on' : '') + '"></span>' + (online ? '활동 중' : timeAgo(s.seen)) + '</td>'
+        + '<td><button class="btn small" data-act="reissue" data-id="' + s.id + '">재발급</button></td>'
+        + '<td><button class="btn small ghost" data-act="remove" data-id="' + s.id + '" aria-label="' + escapeHtml(s.name) + ' 참여자 삭제">' + icon('trash') + '</button></td>'
         + '</tr>';
-    }).join('') : '<tr><td colspan="7" class="empty">아직 입장한 학생이 없어요. 참여코드 <strong>' + room.code + '</strong>를 알려 주세요.</td></tr>';
+    }).join('') : '<tr><td colspan="8" class="empty">아직 입장한 참여자가 없어요. 입장 링크와 참여코드 <strong>' + current.room.code + '</strong>를 알려 주세요.</td></tr>';
   }
 
+  function renderQuestions() {
+    const qs = current.questions;
+    const active = current.room.activeQuestion;
+    if (document.activeElement && document.activeElement.closest('#tqList')) return;
+    $('tqList').innerHTML = qs.length ? qs.map((q, i) => {
+      const typeLabel = (q.type === 'word' ? 'WORD CLOUD' : 'LIVE POLL') + ' · ' + q.responses + '명 응답';
+      const isActive = q.id === active;
+      const body = editing === q.id
+        ? '<div class="stack q-edit"><input class="input" data-edit-title value="' + escapeHtml(q.title) + '" maxlength="160">'
+          + (q.type === 'choice' ? '<textarea class="input" data-edit-options rows="4">' + escapeHtml(q.options.join('\n')) + '</textarea>' : '')
+          + '<p class="fine">' + (q.responses ? '응답이 있어도 문구는 고칠 수 있어요. 이미 선택된 보기는 지울 수 없어요.' : '응답 전에는 보기도 자유롭게 바꿀 수 있어요.') + '</p>'
+          + '<div class="controls"><button class="btn small primary" data-qa="save" data-id="' + q.id + '">수정 저장</button>'
+          + '<button class="btn small" data-qa="cancel">취소</button></div></div>'
+        : '<h3>' + escapeHtml(q.title) + '</h3>' + (q.type === 'word' ? wordCloudHtml(q.results) : pollHtml(q.results, q.responses));
+      return '<article class="q-card' + (isActive ? ' active' : '') + '">'
+        + '<div class="q-top"><span class="q-num">질문 ' + (i + 1) + (isActive ? ' · ● 현재 안내 중' : '') + '</span><div class="controls">'
+        + '<button class="btn small ghost" data-qa="up" data-id="' + q.id + '" aria-label="위로 이동"' + (i === 0 ? ' disabled' : '') + '>' + icon('up') + '</button>'
+        + '<button class="btn small ghost" data-qa="down" data-id="' + q.id + '" aria-label="아래로 이동"' + (i === qs.length - 1 ? ' disabled' : '') + '>' + icon('down') + '</button>'
+        + '<button class="btn small ' + (isActive ? '' : 'soft') + '" data-qa="activate" data-id="' + q.id + '">' + (isActive ? '안내 해제' : '이 질문 안내') + '</button>'
+        + '<button class="btn small" data-qa="big" data-id="' + q.id + '">' + icon('expand') + '크게 보기</button>'
+        + '<button class="btn small ghost" data-qa="edit" data-id="' + q.id + '" aria-label="질문 수정">' + icon('edit') + '</button>'
+        + '<button class="btn small ghost" data-qa="delete" data-id="' + q.id + '" aria-label="질문 삭제">' + icon('trash') + '</button>'
+        + '</div></div><span class="eyebrow">' + typeLabel + '</span>' + body + '</article>';
+    }).join('') : '<div class="empty">아직 만든 질문이 없어요. 위에서 첫 질문을 만들어 보세요.</div>';
+  }
+
+  function renderGallery() {
+    const g = current.gallery;
+    $('tGallery').innerHTML = g.length ? g.map((s, i) =>
+      '<article class="g-card"><div class="g-top"><span class="g-num">' + pad(i + 1) + '</span>'
+      + (s.subject ? '<span class="badge idle">' + escapeHtml(s.subject) + '</span>' : '') + '</div>'
+      + '<span class="g-who">' + escapeHtml(s.name) + ' 선생님</span><h3>' + escapeHtml(s.title) + '</h3>'
+      + (s.note ? '<p>' + escapeHtml(s.note) + '</p>' : '')
+      + '<div class="g-links"><a class="btn small primary" href="' + escapeHtml(s.url) + '" target="_blank" rel="noopener">발행 사이트 열기' + icon('external') + '</a>'
+      + (s.repoUrl ? '<a class="btn small" href="' + escapeHtml(s.repoUrl) + '" target="_blank" rel="noopener">GitHub 저장소</a>' : '') + '</div></article>'
+    ).join('') : '<div class="empty">아직 제출된 수업 사이트가 없어요.</div>';
+  }
+
+  function renderBig() {
+    const q = current.questions.find((x) => x.id === bigQuestion);
+    if (!q) { $('bigModal').hidden = true; bigQuestion = null; return; }
+    $('bigType').textContent = (q.type === 'word' ? 'WORD CLOUD' : 'LIVE POLL') + ' · ' + q.responses + '명 응답';
+    $('bigTitle').textContent = q.title;
+    $('bigBody').innerHTML = q.type === 'word' ? wordCloudHtml(q.results) : pollHtml(q.results, q.responses);
+  }
+
+  // ---------- 이벤트 ----------
   $('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     password = e.target.password.value;
@@ -214,7 +369,7 @@
     try {
       const { room } = await tApi('/api/teacher/rooms', { method: 'POST', data: { title: e.target.title.value } });
       e.target.reset();
-      toast('수업을 만들었어요. 참여코드 ' + room.code);
+      toast('연수가 개설됐어요. 참여코드 ' + room.code + '를 안내해 주세요.');
       openRoom(room.code);
     } catch (err) {
       toast(err.message, 'warn');
@@ -225,32 +380,127 @@
     const card = e.target.closest('[data-code]');
     if (card) openRoom(card.dataset.code);
   });
-
   $('backToRooms').addEventListener('click', () => {
     clearInterval(timer);
     currentCode = null;
     loadRooms();
   });
 
-  $('stepPrev').addEventListener('click', () => loadRoom({ currentStep: current.room.currentStep - 1 }));
-  $('stepNext').addEventListener('click', () => loadRoom({ currentStep: current.room.currentStep + 1 }));
-  $('toggleOpen').addEventListener('click', () => loadRoom({ open: !current.room.open }));
-  $('copyLink').addEventListener('click', () => copyText(location.origin + '/?room=' + current.room.code));
+  $('tTabs').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-tab]');
+    if (!b) return;
+    tab = b.dataset.tab;
+    document.querySelectorAll('#tTabs button').forEach((x) => x.classList.toggle('active', x === b));
+    ['people', 'questions', 'gallery', 'manage'].forEach((t) => { $('tab-' + t).hidden = t !== tab; });
+    renderRoom();
+  });
+
+  const setStep = (i) => loadRoom('/api/teacher/room', { currentStep: i }).then((ok) => ok && toast('참여자에게 ' + stepLabel(i) + ' 단계를 안내했어요.'));
+  $('stepPrev').addEventListener('click', () => setStep(current.room.currentStep - 1));
+  $('stepNext').addEventListener('click', () => setStep(current.room.currentStep + 1));
+  $('stepSelect').addEventListener('change', (e) => { setStep(Number(e.target.value)); e.target.blur(); });
+  $('toggleOpen').addEventListener('click', () => loadRoom('/api/teacher/room', { open: !current.room.open }));
+  $('copyCode').addEventListener('click', () => copyText(current.room.code, '참여코드를 복사했어요.'));
+  $('copyLink').addEventListener('click', () => copyText(location.origin + '/?room=' + current.room.code, '참여코드가 담긴 입장 링크를 복사했어요.'));
+  $('showGuide').addEventListener('click', () => {
+    $('gCode').textContent = current.room.code;
+    $('gUrl').textContent = location.host;
+    $('guideModal').hidden = false;
+  });
+
+  $('csv').addEventListener('click', () => {
+    const rows = [['별칭', '교과', '현재 단계', '완료 단계 수', '도움 요청', '제출 여부', '마지막 접속']].concat(
+      current.students.map((s) => [s.name, s.subject, stepLabel(s.step), s.completed.length + '/' + STEPS.length,
+        s.help ? '필요' : '없음', s.submitted ? '제출' : '미제출', new Date(s.seen).toLocaleString('ko-KR')]));
+    const csv = rows.map((r) => r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+    downloadText('participants-' + current.room.code + '.csv', csv, 'text/csv');
+  });
 
   $('students').addEventListener('click', async (e) => {
     const btn = e.target.closest('button[data-act]');
     if (!btn) return;
     const { act, id } = btn.dataset;
-    const student = current.students.find((s) => s.id === id);
-    if (act === 'remove' && !confirm(student.name + ' 학생의 기록을 지울까요? 되돌릴 수 없어요.')) return;
-    if (act === 'reissue' && !confirm(student.name + ' 학생에게 새 개인코드를 줄까요? 예전 코드는 더 이상 쓸 수 없어요.')) return;
+    const s = current.students.find((x) => x.id === id);
+    if (act === 'reissue' && !confirm(s.name + ' 선생님의 개인코드를 재발급할까요?\n기존 개인코드는 더 이상 쓸 수 없어요.')) return;
+    if (act === 'remove') {
+      const typed = prompt(s.name + ' 선생님의 진도·질문 응답·제출물·개인코드를 모두 지워요. 되돌릴 수 없어요.\n확인을 위해 별칭 "' + s.name + '"을(를) 입력하세요.');
+      if (typed === null) return;
+      if (typed.trim() !== s.name) return toast('별칭이 맞지 않아 삭제하지 않았어요.', 'warn');
+    }
     try {
       const res = await tApi('/api/teacher/student', { method: 'POST', data: { id, action: act } });
-      if (act === 'reissue') alert(res.name + ' 학생의 새 개인코드\n\n' + res.personalCode + '\n\n학생에게 알려 주세요.');
+      if (act === 'reissue') {
+        $('reName').textContent = res.name + ' 선생님의 새 개인코드';
+        $('reCode').textContent = res.personalCode;
+        $('reissueModal').hidden = false;
+      }
+      if (act === 'remove') toast(s.name + ' 선생님과 기록을 삭제했어요.');
       loadRoom();
     } catch (err) {
       toast(err.message, 'warn');
     }
+  });
+  $('reCopy').addEventListener('click', () => copyText($('reCode').textContent));
+
+  // 질문 만들기·관리
+  $('qForm').type.addEventListener('change', (e) => { $('optField').hidden = e.target.value !== 'choice'; });
+  $('qForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    const ok = await loadRoom('/api/teacher/question', { action: 'create', type: f.type.value, title: f.title.value, options: f.options.value });
+    if (ok) { f.reset(); $('optField').hidden = true; toast('질문을 만들고 참여자 화면에 안내했어요.'); }
+  });
+  $('tqList').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-qa]');
+    if (!b) return;
+    const { qa, id } = b.dataset;
+    if (qa === 'big') { bigQuestion = id; renderBig(); $('bigModal').hidden = false; return; }
+    if (qa === 'edit') { editing = id; return renderQuestions(); }
+    if (qa === 'cancel') { editing = null; document.activeElement.blur(); return renderQuestions(); }
+    if (qa === 'save') {
+      const card = b.closest('.q-card');
+      const opts = card.querySelector('[data-edit-options]');
+      const ok = await loadRoom('/api/teacher/question', { action: 'update', id,
+        title: card.querySelector('[data-edit-title]').value, ...(opts ? { options: opts.value } : {}) });
+      if (ok) { editing = null; document.activeElement.blur(); renderQuestions(); toast('질문을 수정했어요. 기존 응답은 그대로예요.'); }
+      return;
+    }
+    if (qa === 'delete' && !confirm('이 질문과 응답을 모두 지울까요?')) return;
+    if (qa === 'up' || qa === 'down') return loadRoom('/api/teacher/question', { action: 'move', id, dir: qa });
+    if (qa === 'delete') return loadRoom('/api/teacher/question', { action: 'delete', id });
+    if (qa === 'activate') {
+      const on = current.room.activeQuestion !== id;
+      if (await loadRoom('/api/teacher/room', { activeQuestion: on ? id : null })) toast(on ? '참여자 화면에 이 질문을 안내했어요.' : '질문 안내를 해제했어요.');
+    }
+  });
+
+  // 연수 관리
+  $('renameForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (await loadRoom('/api/teacher/room', { title: e.target.title.value })) toast('연수명을 수정했어요.');
+  });
+  $('deleteForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!confirm('정말 삭제할까요? 되돌릴 수 없어요.')) return;
+    try {
+      await tApi('/api/teacher/room/delete', { method: 'POST', data: { code: currentCode, confirm: e.target.confirm.value.trim() } });
+      e.target.reset();
+      toast('연수와 관련 기록을 삭제했어요.');
+      clearInterval(timer);
+      currentCode = null;
+      loadRooms();
+    } catch (err) {
+      toast(err.message, 'warn');
+    }
+  });
+
+  document.querySelectorAll('.modal-back').forEach((m) => {
+    m.addEventListener('click', (e) => {
+      if (e.target === m || e.target.closest('[data-close]')) { m.hidden = true; if (m.id === 'bigModal') bigQuestion = null; }
+    });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { document.querySelectorAll('.modal-back').forEach((m) => { m.hidden = true; }); bigQuestion = null; }
   });
 
   $('logout').addEventListener('click', () => {
